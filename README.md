@@ -9,18 +9,21 @@ the result of the request is. httpoison should be good to use.
 Suppose you wished to use httpoison to fetch the HTML for a popular site
 like HackerNews. (There are better tools for this!)
 
-    headers_from_config = ["Referer": "https://news.ycombinator.com/"]
-    request_fun = fn url, headers ->
-      {:ok, response} = HTTPoison.get(url, headers, [])
-      Map.get(response, :body)
-    end
-    Bacon.Scrape.add_client(:hn, headers_from_config, request_fun)
+```elixir
+headers_from_config = ["Referer": "https://news.ycombinator.com/"]
+request_fun = fn url, headers ->
+  {:ok, response} = HTTPoison.get(url, headers, [])
+  Map.get(response, :body)
+end
+Bacon.Scrape.add_client(:hn, headers_from_config, request_fun)
+```
 
 Then when you request a page, even if you hit it multiple times
 rapidly, you're only hitting a local cache.
 
-    Bacon.Scrape.request_page(:hn, "https://news.ycombinator.com/newest")
-
+```elixir
+Bacon.Scrape.request_page(:hn, "https://news.ycombinator.com/newest")
+```
 Many other parameters are available for add_client and request_page to
 control
 * Throttle rate
