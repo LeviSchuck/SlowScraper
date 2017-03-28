@@ -1,4 +1,4 @@
-defmodule Bacon.Scrape.Adaptor do
+defmodule Bacon.Scrape.Adapter do
   @moduledoc """
   Adapter behavior for executing a scrape command
   """
