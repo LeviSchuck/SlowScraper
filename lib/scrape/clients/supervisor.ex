@@ -16,7 +16,7 @@ defmodule Bacon.Scrape.Clients.Supervisor do
     ]
     supervise(children, strategy: :simple_one_for_one)
   end
-  def add_client(supervisor, id, config, fun, throttle) when is_pid(supervisor) and is_atom(fun) do
-    Supervisor.start_child(supervisor, [id, config, fun, throttle])
+  def add_client(supervisor, id, config, adapter, throttle) when is_pid(supervisor) and is_atom(adapter) do
+    Supervisor.start_child(supervisor, [id, config, adapter, throttle])
   end
 end
