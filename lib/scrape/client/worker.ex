@@ -70,13 +70,7 @@ defmodule Bacon.Scrape.Client.Worker do
   defp mk_task_fun({work, contexts}, config, state) do
     fn ->
       # Execute the user provided function safely
-      res = try do
-        apply(state.adapter, :scrape, [config, work])
-      rescue
-        err ->
-          Logger.error "Provided function failed: #{inspect err}"
-          nil
-      end
+      res = apply(state.adapter, :scrape, [config, work])
       # Notify all waiting processes that work is completed
       Enum.map(contexts, mk_cond_func(res))
       :ok
@@ -84,14 +78,6 @@ defmodule Bacon.Scrape.Client.Worker do
   end
 
   defp mk_cond_func(res) do
-    fn fun ->
-      try do
-        fun.(res)
-      rescue
-        err ->
-          Logger.error "Notify function failed: #{inspect err}"
-          nil
-      end
-    end
+    fn fun -> fun.(res) end
   end
 end
