@@ -27,12 +27,12 @@ defmodule Bacon.Scrape.Client.Queue do
 
   def start_link(client) do
     name = {:via, :gproc, {:n, :l, {__MODULE__, client}}}
-    GenServer.start_link(__MODULE__, client, name: name)
+    GenServer.start_link(__MODULE__, {client}, name: name)
   end
   def whereis(client) do
     :gproc.whereis_name({:n, :l, {__MODULE__, client}})
   end
-  def init(client) do
+  def init({client}) do
     state = %Queue{id: client}
     {:ok, state}
   end

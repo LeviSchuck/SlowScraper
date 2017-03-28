@@ -10,12 +10,14 @@ Suppose you wished to use httpoison to fetch the HTML for a popular site
 like HackerNews. (There are better tools for this!)
 
 ```elixir
-headers_from_config = ["Referer": "https://news.ycombinator.com/"]
-request_fun = fn url, headers ->
-  {:ok, response} = HTTPoison.get(url, headers, [])
-  Map.get(response, :body)
+defmodule BasicHTTP do
+  def scrape(headers, url) do
+    {:ok, response} = HTTPoison.get(url, headers, [])
+    Map.get(response, :body)
+  end
 end
-Bacon.Scrape.add_client(:hn, headers_from_config, request_fun)
+headers_from_config = ["Referer": "https://news.ycombinator.com/"]
+Bacon.Scrape.add_client(:hn, headers_from_config, BasicHTTP)
 ```
 
 Then when you request a page, even if you hit it multiple times

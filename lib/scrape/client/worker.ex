@@ -11,18 +11,18 @@ defmodule Bacon.Scrape.Client.Worker do
   use GenServer
   require Logger
 
-  defstruct id: nil, throttle: 1000, fun: nil
+  defstruct id: nil, throttle: 1000, adapter: nil
 
-  def start_link(client, fun, throttle) do
+  def start_link(client, adapter, throttle) do
     name = {:via, :gproc, {:n, :l, {__MODULE__, client}}}
-    GenServer.start_link(__MODULE__, {client, fun, throttle}, name: name)
+    GenServer.start_link(__MODULE__, {client, adapter, throttle}, name: name)
   end
   def whereis(client) do
     :gproc.whereis_name({:n, :l, {__MODULE__, client}})
   end
-  def init({client, fun, throttle}) do
+  def init({client, adapter, throttle}) do
     GenServer.cast(self(), {:ask_for_work})
-    state = %Worker{id: client, fun: fun, throttle: throttle}
+    state = %Worker{id: client, adapter: adapter, throttle: throttle}
     {:ok, state}
   end
 
@@ -71,7 +71,7 @@ defmodule Bacon.Scrape.Client.Worker do
     fn ->
       # Execute the user provided function safely
       res = try do
-        state.fun.(work, config)
+        apply(state.adapter, :scrape, [config, work])
       rescue
         err ->
           Logger.error "Provided function failed: #{inspect err}"

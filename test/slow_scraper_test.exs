@@ -2,6 +2,7 @@ defmodule Bacon.ScrapeTest do
   use ExUnit.Case
   require Logger
   doctest Bacon.Scrape
+  def fake_context, do: {1,2,3}
   defmodule FakeRequest do
     def start_link() do
       Agent.start_link(fn ->
@@ -20,22 +21,27 @@ defmodule Bacon.ScrapeTest do
       Agent.get(pid, fn v -> Map.get(v, url) end)
     end
   end
+  defmodule FakeAdapter do
+    @behaviour Bacon.Scrape.Adaptor
+    def scrape(context, url) do
+      ctx = Bacon.ScrapeTest.fake_context
+      case context do
+        {^ctx, agent} -> FakeRequest.make_request(agent, url)
+        _ -> nil
+      end
+    end
+  end
+
   test "basic functionality" do
     wait = 5
     purge = 9001
     {:ok, agent} = FakeRequest.start_link()
-    fake_context = {1,2,3}
-    request_fun = fn url, context ->
-      case context do
-        ^fake_context -> FakeRequest.make_request(agent, url)
-        _ -> nil
-      end
-    end
+    ctx = fake_context()
     req_page = fn page, time ->
       Bacon.Scrape.request_page(:test1, page, wait, purge, time)
     end
     assert FakeRequest.make_request(agent, :test0) == 1
-    {:ok, _} = Bacon.Scrape.add_client(:test1, fake_context, request_fun, wait)
+    {:ok, _} = Bacon.Scrape.add_client(:test1, {ctx, agent}, FakeAdapter, wait)
     # 0 shouldn't matter in the case of never having retrieved it before
     first = req_page.(:page1, 0)
     assert first == 1
