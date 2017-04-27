@@ -1,14 +1,14 @@
-defmodule Bacon.Scrape.Client.Pages.Supervisor do
+defmodule SlowScraper.Client.Pages.Supervisor do
   @moduledoc false
-  alias Bacon.Scrape.Client
+  alias SlowScraper.Client
   use Supervisor
 
-  def start_link do
-    name = {:via, :gproc, {:n, :l, {__MODULE__}}}
+  def start_link(client) do
+    name = {:via, :gproc, {:n, :l, {__MODULE__, client}}}
     Supervisor.start_link(__MODULE__, {}, name: name)
   end
-  def whereis do
-    :gproc.whereis_name({:n, :l, {__MODULE__}})
+  def whereis(client) do
+    :gproc.whereis_name({:n, :l, {__MODULE__, client}})
   end
   def init({}) do
     children = [

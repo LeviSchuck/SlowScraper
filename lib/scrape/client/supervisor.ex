@@ -1,6 +1,6 @@
-defmodule Bacon.Scrape.Client.Supervisor do
+defmodule SlowScraper.Client.Supervisor do
   @moduledoc false
-  alias Bacon.Scrape.Client
+  alias SlowScraper.Client
   use Supervisor
   require Logger
 
@@ -14,9 +14,10 @@ defmodule Bacon.Scrape.Client.Supervisor do
   end
   def init({client, config, fun, throttle}) do
     children = [
+      supervisor(Client.Pages.Supervisor, [client]),
       worker(Client.Config, [client, config]),
       worker(Client.Queue, [client]),
-      worker(Client.Worker, [client, fun, throttle])
+      worker(Client.Worker, [client, fun, throttle]),
     ]
     supervise(children, strategy: :rest_for_one)
   end

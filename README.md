@@ -1,4 +1,4 @@
-# Bacon.Scrape
+# SlowScraper
 
 The intent of this library is to slowly scrape a non-API site,
 which may be sensitive to quick successive request behavior.
@@ -17,14 +17,15 @@ defmodule BasicHTTP do
   end
 end
 headers_from_config = ["Referer": "https://news.ycombinator.com/"]
-Bacon.Scrape.add_client(:hn, headers_from_config, BasicHTTP)
+spec = SlowScraper.client_spec(:hn, headers_from_config, BasicHTTP)
+Supervisor.start_child(sup_pid, spec)
 ```
 
 Then when you request a page, even if you hit it multiple times
 rapidly, you're only hitting a local cache.
 
 ```elixir
-Bacon.Scrape.request_page(:hn, "https://news.ycombinator.com/newest")
+SlowScraper.request_page(:hn, "https://news.ycombinator.com/newest")
 ```
 Many other parameters are available for add_client and request_page to
 control
@@ -40,7 +41,7 @@ by adding `slow_scraper` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
-  [{:slow_scraper, "~> 0.1.0"}]
+  [{:slow_scraper, "~> 0.1.1"}]
 end
 ```
 

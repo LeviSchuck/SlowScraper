@@ -1,4 +1,4 @@
-defmodule Bacon.Scrape.Client.Page do
+defmodule SlowScraper.Client.Page do
   @moduledoc """
     Pages are a temporary cache for requests.
     If the cache is expired, it does not immediately purge the cached value.
@@ -8,8 +8,8 @@ defmodule Bacon.Scrape.Client.Page do
     so you should not need to worry about leaks over time for rarely used pages.
   """
   require Logger
-  alias Bacon.Scrape.Client.Page
-  alias Bacon.Scrape.Client.Queue
+  alias SlowScraper.Client.Page
+  alias SlowScraper.Client.Queue
   use GenServer
 
   defstruct id: nil,

@@ -3,7 +3,7 @@ defmodule Bacon.Scrape.Mixfile do
 
   def project do
     [app: :slow_scraper,
-     version: "0.1.0",
+     version: "0.1.1",
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -17,7 +17,6 @@ defmodule Bacon.Scrape.Mixfile do
     # Specify extra applications you'll use from Erlang/Elixir
     [
       extra_applications: [:gproc, :logger],
-      mod: {Bacon.Scrape.Application, []}
     ]
   end
 

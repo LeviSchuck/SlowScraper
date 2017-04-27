@@ -1,6 +1,6 @@
-defmodule Bacon.Scrape do
+defmodule SlowScraper do
   @moduledoc """
-  In order to use Bacon.Scrape, you must create a client which will then
+  In order to use SlowScraper, you must create a client which will then
   request pages.
 
   The intent of this library is to slowly scrape a non-API site,
@@ -20,12 +20,12 @@ defmodule Bacon.Scrape do
         end
       end
       headers_from_config = ["Referer": "https://news.ycombinator.com/"]
-      Bacon.Scrape.add_client(:hn, headers_from_config, BasicHTTP)
+      SlowScraper.add_client(:hn, headers_from_config, BasicHTTP)
 
   Then when you request a page, even if you hit it multiple times
   rapidly, you're only hitting a local cache.
 
-      Bacon.Scrape.request_page(:hn, "https://news.ycombinator.com/newest")
+      SlowScraper.request_page(:hn, "https://news.ycombinator.com/newest")
 
   Many other parameters are available for add_client and request_page to
   control
@@ -35,14 +35,14 @@ defmodule Bacon.Scrape do
   * Maximum wait to get a fresh or stale copy of a page
 
   """
-  alias Bacon.Scrape.Clients
-  alias Bacon.Scrape.Client.Page
-  alias Bacon.Scrape.Client.Pages
+  alias SlowScraper.Client
+  alias SlowScraper.Client.Page
+  alias SlowScraper.Client.Pages
 
-  @spec add_client(term, any, function, integer) :: Supervisor.on_start()
-  def add_client(client, config, fun, throttle \\ 1_000) do
-    pid = Clients.Supervisor.whereis()
-    Clients.Supervisor.add_client(pid, client, config, fun, throttle)
+  @spec client_spec(term, any, function, integer) :: Supervisor.Spec.spec
+  def client_spec(client, config, fun, throttle \\ 1_000) do
+    import Supervisor.Spec
+    supervisor(Client.Supervisor, [client, config, fun, throttle])
   end
 
   @spec request_page(term, any, integer, integer, timeout) :: any
@@ -59,7 +59,7 @@ defmodule Bacon.Scrape do
   end
 
   defp make_page(client, page, expire, purge) do
-    pid_pages = Pages.Supervisor.whereis()
+    pid_pages = Pages.Supervisor.whereis(client)
     {:ok, pid_page} = Pages.Supervisor.add_page(
       pid_pages,
       client,

@@ -1,7 +1,7 @@
-defmodule Bacon.ScrapeTest do
+defmodule SlowScraperTest do
   use ExUnit.Case
   require Logger
-  doctest Bacon.Scrape
+  doctest SlowScraper
   def fake_context, do: {1,2,3}
   defmodule FakeRequest do
     def start_link() do
@@ -22,26 +22,41 @@ defmodule Bacon.ScrapeTest do
     end
   end
   defmodule FakeAdapter do
-    @behaviour Bacon.Scrape.Adaptor
+    @behaviour SlowScraper.Adapter
     def scrape(context, url) do
-      ctx = Bacon.ScrapeTest.fake_context
+      ctx = SlowScraperTest.fake_context
       case context do
         {^ctx, agent} -> FakeRequest.make_request(agent, url)
         _ -> nil
       end
     end
   end
+  defmodule FakeSupervisor do
+    use Supervisor
+
+    def start_link do
+      Supervisor.start_link(__MODULE__, {})
+    end
+    def init({}) do
+      supervise([], strategy: :one_for_one)
+    end
+  end
 
   test "basic functionality" do
+    {:ok, sup_pid} = FakeSupervisor.start_link()
+
     wait = 5
     purge = 9001
     {:ok, agent} = FakeRequest.start_link()
     ctx = fake_context()
     req_page = fn page, time ->
-      Bacon.Scrape.request_page(:test1, page, wait, purge, time)
+      SlowScraper.request_page(:test1, page, wait, purge, time)
     end
     assert FakeRequest.make_request(agent, :test0) == 1
-    {:ok, _} = Bacon.Scrape.add_client(:test1, {ctx, agent}, FakeAdapter, wait)
+
+    spec = SlowScraper.client_spec(:test1, {ctx, agent}, FakeAdapter, wait)
+    Supervisor.start_child(sup_pid, spec)
+
     # 0 shouldn't matter in the case of never having retrieved it before
     first = req_page.(:page1, 0)
     assert first == 1

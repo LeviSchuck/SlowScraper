@@ -1,13 +1,13 @@
-defmodule Bacon.Scrape.Client.Worker do
+defmodule SlowScraper.Client.Worker do
   @moduledoc """
     This worker will throttle what it executes, it will use a user
     provided function on a URL in the queue along with user provided
     context. This may be useful if you want to have different Clients
     operate with different headers, but use the same function overall.
   """
-  alias Bacon.Scrape.Client.Queue
-  alias Bacon.Scrape.Client.Worker
-  alias Bacon.Scrape.Client.Config
+  alias SlowScraper.Client.Queue
+  alias SlowScraper.Client.Worker
+  alias SlowScraper.Client.Config
   use GenServer
   require Logger
 

@@ -1,6 +1,6 @@
-defmodule Bacon.Scrape.Clients.Supervisor do
+defmodule SlowScraper.Clients.Supervisor do
   @moduledoc false
-  alias Bacon.Scrape.Client
+  alias SlowScraper.Client
   use Supervisor
 
   def start_link do

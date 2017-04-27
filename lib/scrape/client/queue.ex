@@ -1,10 +1,10 @@
-defmodule Bacon.Scrape.Client.Queue do
+defmodule SlowScraper.Client.Queue do
   @moduledoc """
     A cheap and simple queue implementation.
     It is meant to be used with only one worker, although it may support
     multiple in a greedy pull fashion.
   """
-  alias Bacon.Scrape.Client.Queue
+  alias SlowScraper.Client.Queue
   use GenServer
   require Logger
 

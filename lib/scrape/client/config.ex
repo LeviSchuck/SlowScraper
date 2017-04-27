@@ -1,4 +1,4 @@
-defmodule Bacon.Scrape.Client.Config do
+defmodule SlowScraper.Client.Config do
   @moduledoc """
     This is a dumb and simple contextual config holder that is specific
     to each client as an Agent process.
