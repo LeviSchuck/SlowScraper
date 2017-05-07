@@ -39,10 +39,11 @@ defmodule SlowScraper do
   alias SlowScraper.Client.Page
   alias SlowScraper.Client.Pages
 
-  @spec client_spec(term, any, function, integer) :: Supervisor.Spec.spec
-  def client_spec(client, config, fun, throttle \\ 1_000) do
+  @type wait :: integer | :infinity
+  @spec client_spec(term, any, function, integer, wait) :: Supervisor.Spec.spec
+  def client_spec(client, config, fun, throttle \\ 1_000, max_wait \\ 5_000) do
     import Supervisor.Spec
-    supervisor(Client.Supervisor, [client, config, fun, throttle])
+    supervisor(Client.Supervisor, [client, config, fun, throttle, max_wait])
   end
 
   @spec request_page(term, any, integer, integer, timeout) :: any

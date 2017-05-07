@@ -11,18 +11,28 @@ defmodule SlowScraper.Client.Worker do
   use GenServer
   require Logger
 
-  defstruct id: nil, throttle: 1000, adapter: nil
+  defstruct [
+    id: nil,
+    throttle: 1000,
+    adapter: nil,
+    max_wait: 5000,
+  ]
 
-  def start_link(client, adapter, throttle) do
+  def start_link(client, adapter, throttle, max_wait) do
     name = {:via, :gproc, {:n, :l, {__MODULE__, client}}}
-    GenServer.start_link(__MODULE__, {client, adapter, throttle}, name: name)
+    GenServer.start_link(__MODULE__, {client, adapter, throttle, max_wait}, name: name)
   end
   def whereis(client) do
     :gproc.whereis_name({:n, :l, {__MODULE__, client}})
   end
-  def init({client, adapter, throttle}) do
+  def init({client, adapter, throttle, max_wait}) do
     GenServer.cast(self(), {:ask_for_work})
-    state = %Worker{id: client, adapter: adapter, throttle: throttle}
+    state = %Worker{
+      id: client,
+      adapter: adapter,
+      throttle: throttle,
+      max_wait: max_wait,
+    }
     {:ok, state}
   end
 
@@ -36,7 +46,13 @@ defmodule SlowScraper.Client.Worker do
     # Respect the throttle time as the minimum execution time
     :timer.sleep(state.throttle)
     # Verify completion
-    Task.await(task_res)
+    case Task.yield(task_res) || Task.shutdown(task_res) do
+      {:ok, _} -> nil
+      {:exit, reason} ->
+        Logger.error("SlowScraper: Unexpected worker exit: #{inspect reason}")
+      nil ->
+        Logger.warn("SlowScraper: Worker did not complete within #{state.max_wait}ms")
+    end
     # Now that work is complete, ask for more work
     GenServer.cast(self(), {:ask_for_work})
     {:noreply, state}
@@ -68,9 +84,10 @@ defmodule SlowScraper.Client.Worker do
   end
 
   defp mk_task_fun({work, contexts}, config, state) do
+    adapter = state.adapter
     fn ->
       # Execute the user provided function safely
-      res = apply(state.adapter, :scrape, [config, work])
+      res = adapter.scrape(config, work)
       # Notify all waiting processes that work is completed
       Enum.map(contexts, mk_cond_func(res))
       :ok
