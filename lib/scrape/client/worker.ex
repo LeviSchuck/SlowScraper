@@ -87,7 +87,14 @@ defmodule SlowScraper.Client.Worker do
     adapter = state.adapter
     fn ->
       # Execute the user provided function safely
-      res = adapter.scrape(config, work)
+      res = try do
+        result = adapter.scrape(config, work)
+        {:ok, result}
+      catch
+        err -> {:catched_error, err}
+      rescue
+        err -> {:rescued_error, err}
+      end
       # Notify all waiting processes that work is completed
       Enum.map(contexts, mk_cond_func(res))
       :ok

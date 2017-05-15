@@ -14,10 +14,10 @@ defmodule SlowScraper.Client.Supervisor do
   end
   def init({client, config, fun, throttle, max_wait}) do
     children = [
-      supervisor(Client.Pages.Supervisor, [client]),
-      worker(Client.Config, [client, config]),
-      worker(Client.Queue, [client]),
-      worker(Client.Worker, [client, fun, throttle, max_wait]),
+      supervisor(Client.Pages.Supervisor, [client], restart: :permanent),
+      worker(Client.Config, [client, config], restart: :permanent),
+      worker(Client.Queue, [client], restart: :permanent),
+      worker(Client.Worker, [client, fun, throttle, max_wait], restart: :permanent),
     ]
     supervise(children, strategy: :rest_for_one)
   end

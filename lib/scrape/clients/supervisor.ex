@@ -12,7 +12,7 @@ defmodule SlowScraper.Clients.Supervisor do
   end
   def init({}) do
     children = [
-      supervisor(Client.Supervisor, [], restart: :transient)
+      supervisor(Client.Supervisor, [], restart: :permanent)
     ]
     supervise(children, strategy: :simple_one_for_one)
   end

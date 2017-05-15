@@ -62,6 +62,7 @@ defmodule SlowScraperTest do
     assert first == 1
     # Because we immediately request again, we should get the same thing (cached)
     second = req_page.(:page1, :infinite)
+    assert first == second
     assert second == 1
     assert FakeRequest.get(agent, :page1) == 1
 

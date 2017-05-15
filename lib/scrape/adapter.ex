@@ -6,4 +6,5 @@ defmodule SlowScraper.Adapter do
   @type context :: any
   @type url :: String.t
   @callback scrape(context, url) :: content
+
 end

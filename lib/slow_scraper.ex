@@ -70,8 +70,9 @@ defmodule SlowScraper do
     pid_page
   end
   defp read_page(pid, timeout) when is_pid(pid) do
-    case Page.get_content(pid, timeout) do
-      {content, _} -> content
+    result = Page.get_content(pid, timeout)
+    case result do
+      {:ok, content, _} -> content
       _ -> nil
     end
   end

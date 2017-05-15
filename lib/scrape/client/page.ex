@@ -24,13 +24,21 @@ defmodule SlowScraper.Client.Page do
 
   @spec get_content(pid, timeout) :: any()
   def get_content(pid, timeout) when is_pid(pid) and is_integer(timeout) do
-    GenServer.call(pid, {:get_content, timeout})
+    get_content_int(pid, timeout)
   end
   def get_content(pid, :infinite) when is_pid(pid) do
-    GenServer.call(pid, {:get_content, :infinite})
+    get_content_int(pid, :infinite)
   end
   def get_content(pid, :infinity) when is_pid(pid) do
-    GenServer.call(pid, {:get_content, :infinite})
+    get_content_int(pid, :infinite)
+  end
+  defp get_content_int(pid, timeout) do
+    res = GenServer.call(pid, {:get_content, timeout})
+    case res do
+      {:ok, result, stale} -> {:ok, result, stale}
+      {:catched_error, err} -> throw err
+      {:rescued_error, err} -> raise err
+    end
   end
   @spec force_update(pid) :: :ok
   def force_update(pid) when is_pid(pid) do
@@ -78,7 +86,7 @@ defmodule SlowScraper.Client.Page do
           {:noreply, nstate}
         0 ->
           # The process is not willing to wait for a non-stale result
-          {:reply, {state.content, true}, state}
+          {:reply, {:ok, state.content, true}, state}
         wait_for ->
           # The process is willing to wait wait_for milliseconds
           Process.send_after(self(), {:timeout, from}, wait_for)
@@ -90,7 +98,7 @@ defmodule SlowScraper.Client.Page do
       end
     else
       # The page content is not stale, send it as is
-      {:reply, {state.content, false}, state}
+      {:reply, {:ok, state.content, false}, state}
     end
   end
 
@@ -117,22 +125,35 @@ defmodule SlowScraper.Client.Page do
     {:noreply, nstate}
   end
 
-  @spec handle_cast({:got_update, any()}, %Page{}) :: {:noreply, %Page{}}
+  @type update_content :: {:ok, any()} | {:catched_error, any()} | {:raised_error, any()}
+  @spec handle_cast({:got_update, update_content}, %Page{}) :: {:noreply, %Page{}}
   def handle_cast({:got_update, content}, %Page{} = state) do
     # We got an update, but we need to say when it may no longer be good.
     Process.send_after(self(), {:mark_stale, 0}, state.expire)
     # Let every process waiting know the current page's content
     _ = Enum.map(state.wait, fn from ->
-      GenServer.reply(from, {content, false})
+      case content do
+        {:ok, result} -> GenServer.reply(from, {:ok, result, false})
+        {:rescued_error, err} -> GenServer.reply(from, {:rescued_error, err})
+        {:catched_error, err} -> GenServer.reply(from, {:catched_error, err})
+      end
     end)
     # Since we responded before the timeout, remove from timeout set
     ntimeout = Enum.reduce(state.wait, state.timeout, fn from, timeout ->
       MapSet.delete(timeout, from)
     end)
+    nstale = case content do
+      {:ok, _} -> 0
+      _ -> 1
+    end
+    ncontent = case content do
+      {:ok, c} -> c
+      _ -> nil
+    end
     nstate = %{state |
-      stale: 0,
+      stale: nstale,
       wait: MapSet.new,
-      content: content,
+      content: ncontent,
       timeout: ntimeout,
       queued: false
     }
@@ -175,7 +196,7 @@ defmodule SlowScraper.Client.Page do
       ntimeout = MapSet.delete(state.timeout, from)
       nstate = %{state | timeout: ntimeout}
       # Let the requesting process know the content, but that it is stale.
-      GenServer.reply(from, {state.content, true})
+      GenServer.reply(from, {:ok, state.content, true})
       {:noreply, nstate}
     else
       # This request has already been handled
